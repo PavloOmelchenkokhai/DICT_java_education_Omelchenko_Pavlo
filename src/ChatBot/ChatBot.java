@@ -27,7 +27,29 @@ public class ChatBot {
             System.out.println(i + "!");
         }
 
+        System.out.println("Let's test your programming knowledge.");
+
+        final int CORRECT_ANSWER = 2; // Правильна відповідь - варіант 2
+        int userAnswer;
+
+        // Цикл do-while для повторення тесту до правильної відповіді
+        do {
+            System.out.println("Which method is used to read an integer from the console in Java?");
+            System.out.println("1. nextLine()");
+            System.out.println("2. nextInt()");
+            System.out.println("3. next()");
+            System.out.println("4. readInteger()");
+
+            userAnswer = scanner.nextInt();
+
+            if (userAnswer != CORRECT_ANSWER) {
+                System.out.println("Please, try again.");
+            }
+        } while (userAnswer != CORRECT_ANSWER);
+
+        System.out.println("Congratulations, that's correct!");
 
         scanner.close();
+        System.out.println("Goodbye, have a nice day!");
     }
 }

@@ -3,18 +3,39 @@ package Hangman;
 import java.util.*;
 
 public class hangman {
-    public static void main(String[] args) {
-        String[] wordList = {"python", "java", "javascript", "kotlin"};
-        Random rand = new Random();
 
-        int randomIndex = rand.nextInt(wordList.length);
-        final String SECRET_WORD = wordList[randomIndex];
+    private static final String[] WORD_LIST = {"python", "java", "javascript", "kotlin"};
+    private static final Random RAND = new Random();
+    private static final Scanner SCANNER = new Scanner(System.in);
+
+    public static void main(String[] args) {
+
+        System.out.println("====== HANGMAN ======");
+
+        while (true) {
+            System.out.print("Type \"play\" to play the game, \"exit\" to quit: > ");
+            String command = SCANNER.nextLine().toLowerCase();
+
+            if (command.equals("play")) {
+                playGame();
+            } else if (command.equals("exit")) {
+                System.out.println("Thanks for playing! Goodbye.");
+                break;
+            } else {
+                continue;
+            }
+        }
+
+        SCANNER.close();
+    }
+
+    private static void playGame() {
+        int randomIndex = RAND.nextInt(WORD_LIST.length);
+        final String SECRET_WORD = WORD_LIST[randomIndex];
         final int WORD_LENGTH = SECRET_WORD.length();
 
         int attempts = 8;
-        Scanner scanner = new Scanner(System.in);
         Set<Character> guessedLetters = new HashSet<>();
-
         char[] currentMask = new char[WORD_LENGTH];
         Arrays.fill(currentMask, '-');
 
@@ -29,8 +50,9 @@ public class hangman {
             guessedLetters.add(secondLetter);
         }
 
-        System.out.println("====== HANGMAN ======");
-        System.out.println("The secret word has " + WORD_LENGTH + " letters.");
+        System.out.println("----------------------------------");
+        System.out.println("New game started! (" + WORD_LENGTH + " letters)");
+        System.out.println("----------------------------------");
 
         while (attempts > 0 && String.valueOf(currentMask).contains("-")) {
 
@@ -38,7 +60,7 @@ public class hangman {
             System.out.println("Attempts left: " + attempts);
 
             System.out.print("Input a letter: > ");
-            String input = scanner.nextLine();
+            String input = SCANNER.nextLine();
 
             if (input.length() != 1) {
                 System.out.println("You should input a single letter.");
@@ -78,7 +100,7 @@ public class hangman {
 
             if (letterInWord) {
                 if (!improved) {
-                    System.out.println("No improvements (Should be caught by 'already guessed').");
+                    System.out.println("No improvements.");
                 }
             } else {
                 System.out.println("That letter doesn't appear in the word");
@@ -97,7 +119,6 @@ public class hangman {
         } else {
             System.out.println("You lost!");
         }
-
-        scanner.close();
+        System.out.println("----------------------------------");
     }
 }

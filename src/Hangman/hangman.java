@@ -1,38 +1,71 @@
 package Hangman;
+
 import java.util.Scanner;
 import java.util.Random;
+import java.util.Arrays;
 
 public class hangman {
     public static void main(String[] args) {
-        String[] wordList = {"python", "java", "javascript","kotlin"};
+        String[] wordList = {"python", "java", "javascript", "kotlin"};
         Random rand = new Random();
 
         int randomIndex = rand.nextInt(wordList.length);
-
         final String SECRET_WORD = wordList[randomIndex];
+        final int WORD_LENGTH = SECRET_WORD.length();
 
-        String hint = "";
+        int attempts = 8;
+        Scanner scanner = new Scanner(System.in);
 
-        if (SECRET_WORD.length() >= 2) {
-            hint = SECRET_WORD.substring(0, 2);
+        char[] currentMask = new char[WORD_LENGTH];
+        Arrays.fill(currentMask, '-');
 
-            for (int i = 2; i < SECRET_WORD.length(); i++) {
-                hint += "-";
-            }
-        } else {
-            hint = SECRET_WORD;
+        if (WORD_LENGTH >= 2) {
+            currentMask[0] = SECRET_WORD.charAt(0);
+            currentMask[1] = SECRET_WORD.charAt(1);
         }
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("HANGMAN");
+        System.out.println("====== HANGMAN ======");
+        System.out.println("The secret word has " + WORD_LENGTH + " letters.");
 
-        System.out.print("Guess the word " + hint + ": ");
+        while (attempts > 0 && String.valueOf(currentMask).contains("-")) {
 
-        String guess = scanner.nextLine().toLowerCase();
+            System.out.println(String.valueOf(currentMask));
+            System.out.println("Attempts left: " + attempts);
 
-        if (guess.equals(SECRET_WORD)) {
+            System.out.print("Input a letter: > ");
+            String input = scanner.nextLine().toLowerCase();
+
+            if (input.length() != 1) {
+                System.out.println("Please enter only one letter!");
+                continue;
+            }
+
+            char guessLetter = input.charAt(0);
+            boolean isCorrectGuess = false;
+
+            for (int i = 0; i < WORD_LENGTH; i++) {
+                if (SECRET_WORD.charAt(i) == guessLetter) {
+                    if (currentMask[i] != guessLetter) {
+                        currentMask[i] = guessLetter;
+                        isCorrectGuess = true;
+                    } else {
+                        isCorrectGuess = true;
+                    }
+                }
+            }
+
+            if (!isCorrectGuess) {
+                attempts--;
+                System.out.println("That letter doesn't appear in the word.");
+            }
+            System.out.println("----------------------------------");
+        }
+
+        System.out.println("The word was: " + SECRET_WORD);
+
+        if (!String.valueOf(currentMask).contains("-")) {
             System.out.println("You survived!");
-        } else  {
+        } else {
             System.out.println("You lost!");
         }
 

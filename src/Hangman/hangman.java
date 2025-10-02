@@ -11,9 +11,22 @@ public class hangman {
 
         final String SECRET_WORD = wordList[randomIndex];
 
+        String hint = "";
+
+        if (SECRET_WORD.length() >= 2) {
+            hint = SECRET_WORD.substring(0, 2);
+
+            for (int i = 2; i < SECRET_WORD.length(); i++) {
+                hint += "-";
+            }
+        } else {
+            hint = SECRET_WORD;
+        }
+
         Scanner scanner = new Scanner(System.in);
         System.out.println("HANGMAN");
-        System.out.print("Guess the word: ");
+
+        System.out.print("Guess the word " + hint + ": ");
 
         String guess = scanner.nextLine().toLowerCase();
 

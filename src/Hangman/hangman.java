@@ -41,29 +41,41 @@ public class hangman {
             }
 
             char guessLetter = input.charAt(0);
-            boolean isCorrectGuess = false;
+            boolean letterInWord = false;
+            boolean improved = false;
+
+            String maskBeforeGuess = String.valueOf(currentMask);
 
             for (int i = 0; i < WORD_LENGTH; i++) {
                 if (SECRET_WORD.charAt(i) == guessLetter) {
-                    if (currentMask[i] != guessLetter) {
+                    letterInWord = true;
+
+                    if (currentMask[i] == '-') {
                         currentMask[i] = guessLetter;
-                        isCorrectGuess = true;
-                    } else {
-                        isCorrectGuess = true;
+                        improved = true;
                     }
                 }
             }
 
-            if (!isCorrectGuess) {
+            if (letterInWord) {
+                if (!improved) {
+                    System.out.println("No improvements");
+                    attempts--;
+                }
+
+            } else {
+                System.out.println("That letter doesn't appear in the word");
                 attempts--;
-                System.out.println("That letter doesn't appear in the word.");
             }
+
             System.out.println("----------------------------------");
         }
 
+        System.out.println(String.valueOf(currentMask));
         System.out.println("The word was: " + SECRET_WORD);
 
         if (!String.valueOf(currentMask).contains("-")) {
+            System.out.println("You guessed the word!");
             System.out.println("You survived!");
         } else {
             System.out.println("You lost!");

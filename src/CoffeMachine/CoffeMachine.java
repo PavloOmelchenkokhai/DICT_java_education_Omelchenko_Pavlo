@@ -8,10 +8,8 @@ import java.util.*;
         final int milk;
         final int beans;
         final int cost;
-        final int id;
 
-        public Coffee(int id, String name, int water, int milk, int beans, int cost) {
-            this.id = id;
+        public Coffee(String name, int water, int milk, int beans, int cost) {
             this.name = name;
             this.water = water;
             this.milk = milk;
@@ -20,9 +18,9 @@ import java.util.*;
         }
     }
 
-    private static final Coffee ESPRESSO = new Coffee(1, "espresso", 250, 0, 16, 4);
-    private static final Coffee LATTE = new Coffee(2, "latte", 350, 75, 20, 7);
-    private static final Coffee CAPPUCCINO = new Coffee(3, "cappuccino", 200, 100, 12, 6);
+    private static final Coffee ESPRESSO = new Coffee("espresso", 250, 0, 16, 4);
+    private static final Coffee LATTE = new Coffee("latte", 350, 75, 20, 7);
+    private static final Coffee CAPPUCCINO = new Coffee("cappuccino", 200, 100, 12, 6);
 
     private static final Coffee[] COFFEE_TYPES = {ESPRESSO, LATTE, CAPPUCCINO};
 
@@ -38,7 +36,7 @@ import java.util.*;
         this.scanner = new Scanner(System.in);
     }
 
-    private void displayStatus() {
+    private void remaining() {
         System.out.println("\nThe coffee machine has:");
         System.out.println(water + " of water");
         System.out.println(milk + " of milk");
@@ -48,40 +46,46 @@ import java.util.*;
     }
 
     private boolean checkResources(Coffee coffeeType) {
+        String missingIngredient = "";
+
         if (water < coffeeType.water) {
-            System.out.println("Sorry, not enough water!");
+            missingIngredient = "water";
+        } else if (milk < coffeeType.milk) {
+            missingIngredient = "milk";
+        } else if (beans < coffeeType.beans) {
+            missingIngredient = "coffee beans";
+        } else if (cups < 1) {
+            missingIngredient = "disposable cups";
+        }
+
+        if (!missingIngredient.isEmpty()) {
+            System.out.println("Sorry, not enough " + missingIngredient + "!");
             return false;
         }
-        if (milk < coffeeType.milk) {
-            System.out.println("Sorry, not enough milk!");
-            return false;
-        }
-        if (beans < coffeeType.beans) {
-            System.out.println("Sorry, not enough coffee beans!");
-            return false;
-        }
-        if (cups < 1) {
-            System.out.println("Sorry, not enough disposable cups!");
-            return false;
-        }
+
         return true;
     }
 
     private void buy() {
-        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: (enter number)");
+        System.out.println("\nWhat do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back – to main menu:");
+        String choice = scanner.next();
+
+        if (choice.equalsIgnoreCase("back")) {
+            return;
+        }
 
         try {
-            int choice = scanner.nextInt();
+            int coffeeId = Integer.parseInt(choice);
 
-            if (choice < 1 || choice > COFFEE_TYPES.length) {
-                System.out.println("Invalid selection. Please choose 1, 2, or 3.");
+            if (coffeeId < 1 || coffeeId > COFFEE_TYPES.length) {
+                System.out.println("Invalid selection. Please choose 1, 2, 3, or 'back'.");
                 return;
             }
 
-            Coffee selectedCoffee = COFFEE_TYPES[choice - 1];
+            Coffee selectedCoffee = COFFEE_TYPES[coffeeId - 1];
 
             if (checkResources(selectedCoffee)) {
-                System.out.println("I have enough resources, making you a " + selectedCoffee.name + "!");
+                System.out.println("I have enough resources, making you a coffee!");
 
                 water -= selectedCoffee.water;
                 milk -= selectedCoffee.milk;
@@ -90,24 +94,23 @@ import java.util.*;
                 money += selectedCoffee.cost;
             }
 
-        } catch (InputMismatchException e) {
-            System.out.println("Invalid input. Please enter a number for your choice.");
-            scanner.next();
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input. Please enter 1, 2, 3, or 'back'.");
         }
     }
 
     private void fill() {
         try {
-            System.out.println("Write how many ml of water you want to add:");
+            System.out.println("Write how many ml of water do you want to add:");
             int addedWater = scanner.nextInt();
 
-            System.out.println("Write how many ml of milk you want to add:");
+            System.out.println("Write how many ml of milk do you want to add:");
             int addedMilk = scanner.nextInt();
 
-            System.out.println("Write how many grams of coffee beans you want to add:");
+            System.out.println("Write how many grams of coffee beans do you want to add:");
             int addedBeans = scanner.nextInt();
 
-            System.out.println("Write how many disposable coffee cups you want to add:");
+            System.out.println("Write how many disposable cups of coffee do you want to add:");
             int addedCups = scanner.nextInt();
 
             water += addedWater;
@@ -117,7 +120,7 @@ import java.util.*;
 
         } catch (InputMismatchException e) {
             System.out.println("Invalid input. Please enter whole numbers for amounts.");
-            scanner.next();
+            scanner.nextLine();
         }
     }
 
@@ -127,28 +130,33 @@ import java.util.*;
     }
 
     public void start() {
-        displayStatus();
+        boolean running = true;
+        while (running) {
+            System.out.println("\nWrite action (buy, fill, take, remaining, exit):");
 
-        System.out.println("\nWrite action (buy, fill, take):");
+            String action = scanner.next();
 
-        String action = scanner.next();
-
-        switch (action.toLowerCase()) {
-            case "buy":
-                buy();
-                break;
-            case "fill":
-                fill();
-                break;
-            case "take":
-                take();
-                break;
-            default:
-                System.out.println("Unknown action: " + action + ". Please use 'buy', 'fill', or 'take'.");
-                break;
+            switch (action.toLowerCase()) {
+                case "buy":
+                    buy();
+                    break;
+                case "fill":
+                    fill();
+                    break;
+                case "take":
+                    take();
+                    break;
+                case "remaining":
+                    remaining();
+                    break;
+                case "exit":
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Unknown action: " + action + ". Please use one of the listed commands.");
+                    break;
+            }
         }
-
-        displayStatus();
         scanner.close();
     }
 

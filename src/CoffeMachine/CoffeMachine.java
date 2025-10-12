@@ -1,6 +1,6 @@
 import java.util.*;
 
- public class CoffeeMachine {
+ public class CoffeMachine {
 
     private enum State {
         CHOOSING_ACTION,
@@ -44,7 +44,7 @@ import java.util.*;
 
     private final Scanner scanner;
 
-    public CoffeeMachine() {
+    public CoffeMachine() {
         this.currentState = State.CHOOSING_ACTION;
         this.scanner = new Scanner(System.in);
         displayPrompt();
@@ -232,6 +232,6 @@ import java.util.*;
     }
 
     public static void main(String[] args) {
-        new CoffeeMachine().start();
+        new CoffeMachine().start();
     }
 }

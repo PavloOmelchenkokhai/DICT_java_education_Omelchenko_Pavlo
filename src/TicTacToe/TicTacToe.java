@@ -1,46 +1,114 @@
 import java.util.*;
 
 public class TicTacToe {
-
-    private static final String HORIZONTAL_LINE = "---------";
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        Game game = new Game(scanner);
+        game.start();
+        scanner.close();
+    }
+}
 
-        String cells = "_________";
-        char currentPlayer = 'X';
+class Game {
+    private final Scanner scanner;
+    private final Board board;
+    private char currentPlayer;
 
-        displayBoard(cells);
+    public Game(Scanner scanner) {
+        this.scanner = scanner;
+        this.board = new Board("_________");
+        this.currentPlayer = 'X';
+    }
+
+    public void start() {
+        board.display();
 
         while (true) {
+            PlayerMove.makeMove(board, scanner, currentPlayer);
+            board.display();
 
-            cells = getUserMove(cells, scanner, currentPlayer);
+            String status = board.analyzeStatus();
 
-            displayBoard(cells);
-
-            String gameStatus = analyzeStatus(cells);
-
-            if (!gameStatus.equals("Game not finished")) {
-                System.out.println(gameStatus);
+            if (!status.equals("Game not finished")) {
+                System.out.println(status);
                 break;
             }
 
             currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
         }
+    }
+}
 
-        scanner.close();
+class Board {
+    private static final String HORIZONTAL_LINE = "---------";
+    private char[] cells;
+
+    public Board(String initialState) {
+        this.cells = initialState.toCharArray();
     }
 
-    private static String getUserMove(String cells, Scanner scanner, char player) {
+    public void setCell(int index, char player) {
+        cells[index] = player;
+    }
 
-        char[] board = cells.toCharArray();
+    public char getCell(int index) {
+        return cells[index];
+    }
+
+    public boolean isCellEmpty(int index) {
+        return cells[index] == '_';
+    }
+
+    public void display() {
+        System.out.println(HORIZONTAL_LINE);
+        printRow(cells, 0);
+        printRow(cells, 3);
+        printRow(cells, 6);
+        System.out.println(HORIZONTAL_LINE);
+    }
+
+    private void printRow(char[] c, int start) {
+        System.out.printf("| %c %c %c |\n", c[start], c[start + 1], c[start + 2]);
+    }
+
+    public String analyzeStatus() {
+        boolean xWins = checkWin('X');
+        boolean oWins = checkWin('O');
+
+        long xCount = Arrays.stream(new String(cells).split("")).filter(s -> s.equals("X")).count();
+        long oCount = Arrays.stream(new String(cells).split("")).filter(s -> s.equals("O")).count();
+        long emptyCount = Arrays.stream(new String(cells).split("")).filter(s -> s.equals("_")).count();
+
+        if (xWins && oWins) return "Impossible";
+        if (Math.abs(xCount - oCount) >= 2) return "Impossible";
+        if (xWins) return "X wins";
+        if (oWins) return "O wins";
+        if (emptyCount > 0) return "Game not finished";
+        return "Draw";
+    }
+
+    private boolean checkWin(char player) {
+        int[][] lines = {
+                {0, 1, 2}, {3, 4, 5}, {6, 7, 8},
+                {0, 3, 6}, {1, 4, 7}, {2, 5, 8},
+                {0, 4, 8}, {2, 4, 6}
+        };
+        for (int[] line : lines) {
+            if (cells[line[0]] == player && cells[line[1]] == player && cells[line[2]] == player)
+                return true;
+        }
+        return false;
+    }
+}
+
+class PlayerMove {
+    public static void makeMove(Board board, Scanner scanner, char player) {
         boolean moveAccepted = false;
 
         do {
             System.out.print("Enter the coordinates: ");
-            String inputLine = scanner.nextLine();
-
-            String[] parts = inputLine.trim().split("\\s+");
+            String input = scanner.nextLine();
+            String[] parts = input.trim().split("\\s+");
 
             if (parts.length != 2) {
                 System.out.println("You should enter numbers!");
@@ -58,92 +126,17 @@ public class TicTacToe {
 
                 int index = (row - 1) * 3 + (col - 1);
 
-                if (board[index] != '_') {
+                if (!board.isCellEmpty(index)) {
                     System.out.println("This cell is occupied! Choose another one!");
                     continue;
                 }
 
-                board[index] = player;
+                board.setCell(index, player);
                 moveAccepted = true;
 
             } catch (NumberFormatException e) {
                 System.out.println("You should enter numbers!");
             }
-
         } while (!moveAccepted);
-
-        return new String(board);
-    }
-
-    private static String analyzeStatus(String cells) {
-
-        boolean xWins = checkWin(cells, 'X');
-        boolean oWins = checkWin(cells, 'O');
-
-        long xCount = cells.chars().filter(ch -> ch == 'X').count();
-        long oCount = cells.chars().filter(ch -> ch == 'O').count();
-        long emptyCount = cells.chars().filter(ch -> ch == '_').count();
-
-        if (xWins && oWins) {
-            return "Impossible";
-        }
-        if (Math.abs(xCount - oCount) >= 2) {
-            return "Impossible";
-        }
-
-        if (xWins) {
-            return "X wins";
-        }
-
-        if (oWins) {
-            return "O wins";
-        }
-
-        if (emptyCount > 0) {
-            return "Game not finished";
-        } else {
-            return "Draw";
-        }
-    }
-
-    private static boolean checkWin(String cells, char player) {
-
-        if (checkThree(cells, player, 0, 1, 2) ||
-                checkThree(cells, player, 3, 4, 5) ||
-                checkThree(cells, player, 6, 7, 8)) {
-            return true;
-        }
-
-        if (checkThree(cells, player, 0, 3, 6) ||
-                checkThree(cells, player, 1, 4, 7) ||
-                checkThree(cells, player, 2, 5, 8)) {
-            return true;
-        }
-
-       if (checkThree(cells, player, 0, 4, 8) ||
-                checkThree(cells, player, 2, 4, 6)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static boolean checkThree(String cells, char player, int i1, int i2, int i3) {
-        return cells.charAt(i1) == player &&
-                cells.charAt(i2) == player &&
-                cells.charAt(i3) == player;
-    }
-
-    private static void displayBoard(String cells) {
-        System.out.println(HORIZONTAL_LINE);
-        printRow(cells.substring(0, 3));
-        printRow(cells.substring(3, 6));
-        printRow(cells.substring(6, 9));
-        System.out.println(HORIZONTAL_LINE);
-    }
-
-    private static void printRow(String rowString) {
-        String formattedSymbols = String.join(" ", rowString.split(""));
-        System.out.printf("| %s |\n", formattedSymbols);
     }
 }

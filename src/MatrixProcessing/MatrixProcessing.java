@@ -84,6 +84,46 @@ class MatrixUtils {
         }
         return result;
     }
+
+    public static Matrix transposeMainDiagonal(Matrix A) {
+        Matrix result = new Matrix(A.getCols(), A.getRows());
+        for (int i = 0; i < A.getRows(); i++) {
+            for (int j = 0; j < A.getCols(); j++) {
+                result.getData()[j][i] = A.getData()[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static Matrix transposeSideDiagonal(Matrix A) {
+        Matrix result = new Matrix(A.getCols(), A.getRows());
+        for (int i = 0; i < A.getRows(); i++) {
+            for (int j = 0; j < A.getCols(); j++) {
+                result.getData()[A.getCols() - 1 - j][A.getRows() - 1 - i] = A.getData()[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static Matrix transposeVertical(Matrix A) {
+        Matrix result = new Matrix(A.getRows(), A.getCols());
+        for (int i = 0; i < A.getRows(); i++) {
+            for (int j = 0; j < A.getCols(); j++) {
+                result.getData()[i][A.getCols() - 1 - j] = A.getData()[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static Matrix transposeHorizontal(Matrix A) {
+        Matrix result = new Matrix(A.getRows(), A.getCols());
+        for (int i = 0; i < A.getRows(); i++) {
+            for (int j = 0; j < A.getCols(); j++) {
+                result.getData()[A.getRows() - 1 - i][j] = A.getData()[i][j];
+            }
+        }
+        return result;
+    }
 }
 
 public class MatrixProcessing {
@@ -98,6 +138,7 @@ public class MatrixProcessing {
                 case 1 -> addMatrices(sc);
                 case 2 -> multiplyByConstant(sc);
                 case 3 -> multiplyMatrices(sc);
+                case 4 -> transposeMatrix(sc);
                 case 0 -> {
                     return;
                 }
@@ -110,6 +151,7 @@ public class MatrixProcessing {
         System.out.println("1. Add matrices");
         System.out.println("2. Multiply matrix by a constant");
         System.out.println("3. Multiply matrices");
+        System.out.println("4. Transpose matrix");
         System.out.println("0. Exit");
     }
 
@@ -176,6 +218,35 @@ public class MatrixProcessing {
             result.print();
         }
     }
+
+    private static void transposeMatrix(Scanner sc) {
+        System.out.println("1. Main diagonal");
+        System.out.println("2. Side diagonal");
+        System.out.println("3. Vertical line");
+        System.out.println("4. Horizontal line");
+        System.out.print("Your choice: > ");
+        int option = sc.nextInt();
+
+        System.out.print("Enter matrix size: > ");
+        int n = sc.nextInt();
+        int m = sc.nextInt();
+        Matrix A = new Matrix(n, m);
+        System.out.println("Enter matrix:");
+        A.read(sc);
+
+        Matrix result = switch (option) {
+            case 1 -> MatrixUtils.transposeMainDiagonal(A);
+            case 2 -> MatrixUtils.transposeSideDiagonal(A);
+            case 3 -> MatrixUtils.transposeVertical(A);
+            case 4 -> MatrixUtils.transposeHorizontal(A);
+            default -> null;
+        };
+
+        if (result == null) {
+            System.out.println("Invalid choice.");
+        } else {
+            System.out.println("The result is:");
+            result.print();
+        }
+    }
 }
-
-

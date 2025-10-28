@@ -34,7 +34,7 @@ class Matrix {
     public void print() {
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                System.out.print(data[i][j] + " ");
+                System.out.printf("%.2f ", data[i][j]);
             }
             System.out.println();
         }
@@ -45,7 +45,6 @@ class MatrixUtils {
 
     public static Matrix add(Matrix A, Matrix B) {
         if (A.getRows() != B.getRows() || A.getCols() != B.getCols()) return null;
-
         Matrix result = new Matrix(A.getRows(), A.getCols());
         for (int i = 0; i < A.getRows(); i++)
             for (int j = 0; j < A.getCols(); j++)
@@ -63,15 +62,15 @@ class MatrixUtils {
 
     public static Matrix multiply(Matrix A, Matrix B) {
         if (A.getCols() != B.getRows()) return null;
-
         Matrix result = new Matrix(A.getRows(), B.getCols());
-        for (int i = 0; i < A.getRows(); i++)
+        for (int i = 0; i < A.getRows(); i++) {
             for (int j = 0; j < B.getCols(); j++) {
                 double sum = 0;
                 for (int k = 0; k < A.getCols(); k++)
                     sum += A.getData()[i][k] * B.getData()[k][j];
                 result.getData()[i][j] = sum;
             }
+        }
         return result;
     }
 
@@ -141,9 +140,35 @@ class MatrixUtils {
         }
         return minor;
     }
+
+    public static Matrix inverse(Matrix A) {
+        int n = A.getRows();
+        if (n != A.getCols()) return null;
+
+        double det = determinant(A);
+        if (Math.abs(det) < 1e-9) return null;
+
+        Matrix adjugate = adjugate(A);
+        return multiplyByConstant(adjugate, 1.0 / det);
+    }
+
+    private static Matrix adjugate(Matrix A) {
+        int n = A.getRows();
+        Matrix result = new Matrix(n, n);
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                double[][] minor = getMinor(A.getData(), i, j);
+                double detMinor = calculateDeterminant(minor);
+                result.getData()[j][i] = Math.pow(-1, i + j) * detMinor;
+            }
+        }
+        return result;
+    }
 }
 
 public class MatrixProcessing {
+
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         while (true) {
@@ -157,7 +182,9 @@ public class MatrixProcessing {
                 case 3 -> multiplyMatrices(sc);
                 case 4 -> transposeMatrix(sc);
                 case 5 -> calculateDeterminant(sc);
+                case 6 -> inverseMatrix(sc);
                 case 0 -> {
+                    System.out.println("Goodbye!");
                     return;
                 }
                 default -> System.out.println("Invalid choice. Try again.");
@@ -166,11 +193,13 @@ public class MatrixProcessing {
     }
 
     private static void printMenu() {
+        System.out.println("\n=== Matrix Operations ===");
         System.out.println("1. Add matrices");
         System.out.println("2. Multiply matrix by a constant");
         System.out.println("3. Multiply matrices");
         System.out.println("4. Transpose matrix");
         System.out.println("5. Calculate a determinant");
+        System.out.println("6. Inverse matrix");
         System.out.println("0. Exit");
     }
 
@@ -274,6 +303,27 @@ public class MatrixProcessing {
 
         double det = MatrixUtils.determinant(A);
         System.out.println("The result is:");
-        System.out.println((int) det == det ? (int) det : det);
+        System.out.println((Math.abs(det - Math.round(det)) < 1e-9) ? (int) det : det);
+    }
+
+    private static void inverseMatrix(Scanner sc) {
+        System.out.print("Enter matrix size: > ");
+        int n = sc.nextInt(), m = sc.nextInt();
+        if (n != m) {
+            System.out.println("The operation cannot be performed.");
+            return;
+        }
+
+        Matrix A = new Matrix(n, m);
+        System.out.println("Enter matrix:");
+        A.read(sc);
+
+        Matrix inverse = MatrixUtils.inverse(A);
+        if (inverse == null) {
+            System.out.println("This matrix doesn't have an inverse.");
+        } else {
+            System.out.println("The result is:");
+            inverse.print();
+        }
     }
 }

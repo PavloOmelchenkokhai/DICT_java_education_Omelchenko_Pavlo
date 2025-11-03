@@ -1,129 +1,168 @@
-import java.util.*;
 import static java.lang.Math.*;
 
 public class CreditCalculator {
-
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
+        CalculatorInput input = new CalculatorInput();
+        input.readParameters();
 
-        System.out.println("What do you want to calculate?");
-        System.out.println("type \"n\" for number of monthly payments,");
-        System.out.println("type \"a\" for annuity monthly payment amount,");
-        System.out.println("type \"p\" for loan principal:");
-        String calculationType = scanner.next();
-
-        double principal = -1.0;
-        double payment = -1.0;
-        int periods = -1;
-        double interestPercent = -1.0;
-
-        if (!calculationType.equals("p")) {
-            System.out.println("Enter the loan principal:");
-            principal = scanner.nextDouble();
-        }
-
-        if (!calculationType.equals("a")) {
-            System.out.println("Enter the annuity payment:");
-            payment = scanner.nextDouble();
-        }
-
-        if (!calculationType.equals("n")) {
-            System.out.println("Enter the number of periods:");
-            periods = scanner.nextInt();
-        }
-
-        System.out.println("Enter the loan interest:");
-        interestPercent = scanner.nextDouble();
-
-        if (interestPercent <= 0) {
-            System.out.println("Incorrect interest rate. Interest must be a positive number.");
-            scanner.close();
+        String validationError = input.validate();
+        if (validationError != null) {
+            System.out.println("Incorrect parameters");
+            System.out.println("Reason: " + validationError);
+            System.out.println("Example valid runs:");
+            System.out.println("  java -Dtype=diff -Dprincipal=1000000 -Dperiods=10 -Dinterest=10 CreditCalculator");
+            System.out.println("  java -Dtype=annuity -Dprincipal=1000000 -Dperiods=60 -Dinterest=10 CreditCalculator");
+            System.out.println("  java -Dtype=annuity -Dpayment=8722 -Dperiods=120 -Dinterest=5.6 CreditCalculator");
             return;
         }
 
-        double i = interestPercent / 1200.0;
+        CalculatorLogic logic = new CalculatorLogic();
+        logic.calculate(input);
+    }
+}
 
-        if (calculationType.equals("a")) {
-            calculateAnnuityPayment(principal, periods, i);
-        } else if (calculationType.equals("p")) {
-            calculatePrincipal(payment, periods, i);
-        } else if (calculationType.equals("n")) {
-            calculatePeriods(principal, payment, i);
-        } else {
-            System.out.println("Invalid calculation type. Please use 'n', 'a', or 'p'.");
+class CalculatorInput {
+    String type;
+    Double principal;
+    Double payment;
+    Integer periods;
+    Double interest;
+
+    void readParameters() {
+        try {
+            type = System.getProperty("type");
+            String sPrincipal = System.getProperty("principal");
+            String sPayment = System.getProperty("payment");
+            String sPeriods = System.getProperty("periods");
+            String sInterest = System.getProperty("interest");
+
+            if (sPrincipal != null) principal = Double.parseDouble(sPrincipal);
+            if (sPayment != null) payment = Double.parseDouble(sPayment);
+            if (sPeriods != null) periods = Integer.parseInt(sPeriods);
+            if (sInterest != null) interest = Double.parseDouble(sInterest);
+        } catch (NumberFormatException ex) {
+        }
+    }
+
+    String validate() {
+        if (type == null) return "Parameter --type is missing (use -Dtype=annuity or -Dtype=diff).";
+        if (!type.equals("diff") && !type.equals("annuity"))
+            return "Unknown type: must be 'annuity' or 'diff'.";
+
+        if (interest == null) return "Parameter --interest is missing.";
+        if (interest <= 0) return "--interest must be a positive number.";
+
+        if (principal != null && principal < 0) return "--principal must be non-negative.";
+        if (payment != null && payment < 0) return "--payment must be non-negative.";
+        if (periods != null && periods <= 0) return "--periods must be a positive integer.";
+
+        if (type.equals("diff")) {
+            if (payment != null) return "--payment should not be provided for diff payments.";
+            if (principal == null) return "--principal is required for diff.";
+            if (periods == null) return "--periods is required for diff.";
+            return null;
         }
 
-        scanner.close();
+        int known = 0;
+        if (principal != null) known++;
+        if (payment != null) known++;
+        if (periods != null) known++;
+        if (known < 2) {
+            return "For annuity you must provide at least two of the following: --principal, --payment, --periods (plus --interest).";
+        }
+
+        return null;
+    }
+}
+
+class CalculatorLogic {
+
+    void calculate(CalculatorInput input) {
+        double i = input.interest / 1200.0;
+
+        if (input.type.equals("diff")) {
+            calculateDifferentiated(input.principal, input.periods, i);
+        } else {
+            if (input.payment == null) {
+                calculateAnnuityPayment(input.principal, input.periods, i);
+            } else if (input.principal == null) {
+                calculatePrincipal(input.payment, input.periods, i);
+            } else if (input.periods == null) {
+                calculatePeriods(input.principal, input.payment, i);
+            } else {
+                System.out.println("Incorrect parameters");
+            }
+        }
     }
 
-    private static void calculateAnnuityPayment(double P, int n, double i) {
-        // A = P * (i * (1 + i)^n) / ((1 + i)^n - 1)
-        double powerTerm = pow(1 + i, n);
-
-        double A = P * (i * powerTerm) / (powerTerm - 1);
-
-        long monthlyPayment = (long) ceil(A);
-
-        System.out.println("Your monthly payment = " + monthlyPayment + "!");
-
-        calculateOverpayment(P, monthlyPayment, n);
+    private void calculateDifferentiated(double P, int n, double i) {
+        double total = 0.0;
+        for (int m = 1; m <= n; m++) {
+            double Dm = (P / n) + i * (P - (P * (m - 1) / n));
+            long pay = (long) ceil(Dm);
+            System.out.println("Month " + m + ": payment is " + pay);
+            total += pay;
+        }
+        long over = (long) round(total - P);
+        System.out.println("Overpayment = " + over);
     }
 
-    private static void calculatePrincipal(double A, int n, double i) {
-        // P = A / ((i * (1 + i)^n) / ((1 + i)^n - 1))
-        double powerTerm = pow(1 + i, n);
+    private void calculateAnnuityPayment(double P, int n, double i) {
+        if (P <= 0 || n <= 0) {
+            System.out.println("Incorrect parameters: principal and periods must be positive for annuity payment calculation.");
+            return;
+        }
+        double pow = pow(1 + i, n);
+        double A = P * (i * pow) / (pow - 1);
+        long payment = (long) ceil(A);
+        System.out.println("Your annuity payment = " + payment + "!");
+        printOverpayment(P, payment, n);
+    }
 
-        double annuityFactor = (i * powerTerm) / (powerTerm - 1);
-
-        double P = A / annuityFactor;
-
+    private void calculatePrincipal(double A, int n, double i) {
+        if (A <= 0 || n <= 0) {
+            System.out.println("Incorrect parameters: payment and periods must be positive for principal calculation.");
+            return;
+        }
+        double pow = pow(1 + i, n);
+        double denom = (i * pow) / (pow - 1);
+        if (denom == 0) {
+            System.out.println("Calculation error (denominator zero). Check parameters.");
+            return;
+        }
+        double P = A / denom;
         long principal = (long) round(P);
-
         System.out.println("Your loan principal = " + principal + "!");
-
-        calculateOverpayment(principal, (long) round(A), n);
+        printOverpayment(principal, (long) round(A), n);
     }
 
-    private static void calculatePeriods(double P, double A, double i) {
-
-        double logArgument = A / (A - i * P);
-
-        if (logArgument <= 1.0) {
+    private void calculatePeriods(double P, double A, double i) {
+        if (P <= 0 || A <= 0) {
+            System.out.println("Incorrect parameters: principal and payment must be positive for periods calculation.");
+            return;
+        }
+        double denom = A - i * P;
+        if (denom <= 0) {
             System.out.println("Error: The monthly payment is too small to ever repay the loan.");
             return;
         }
-
-        double nDouble = log(logArgument) / log(1 + i);
-
+        double nDouble = log(A / denom) / log(1 + i);
         int n = (int) ceil(nDouble);
-
         int years = n / 12;
         int months = n % 12;
-
-        String result = "It will take ";
-        if (years > 0) {
-            result += years + (years == 1 ? " year" : " years");
-            if (months > 0) {
-                result += " and ";
-            }
-        }
+        StringBuilder sb = new StringBuilder("It will take ");
+        if (years > 0) sb.append(years).append(years == 1 ? " year" : " years");
         if (months > 0) {
-            result += months + (months == 1 ? " month" : " months");
+            if (years > 0) sb.append(" and ");
+            sb.append(months).append(months == 1 ? " month" : " months");
         }
-
-        if (result.equals("It will take ")) {
-            result += "less than a month";
-        }
-
-        System.out.println(result + " to repay this loan!");
-
-        calculateOverpayment((long) round(P), (long) round(A), n);
+        sb.append(" to repay this loan!");
+        System.out.println(sb.toString());
+        printOverpayment(P, (long) round(A), n);
     }
 
-    private static void calculateOverpayment(double principal, long regularPayment, int periods) {
-        double totalPaid = (double) regularPayment * periods;
-        long overpayment = (long) round(totalPaid - principal);
-
+    private void printOverpayment(double principal, long monthlyPayment, int periods) {
+        long overpayment = (long) round(monthlyPayment * (double) periods - principal);
         System.out.println("Overpayment = " + overpayment);
     }
 }

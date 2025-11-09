@@ -28,7 +28,16 @@ public class RockPaperScissors {
         } catch (FileNotFoundException e) {
         }
 
-        String[] options = {"rock", "paper", "scissors"};
+        String inputOptions = scanner.nextLine().trim();
+        List<String> options;
+        if (inputOptions.isEmpty()) {
+            options = Arrays.asList("rock", "paper", "scissors");
+        } else {
+            options = Arrays.asList(inputOptions.split(","));
+            options.replaceAll(String::trim);
+        }
+
+        System.out.println("Okay, let's start");
 
         while (true) {
             String userChoice = scanner.nextLine().trim().toLowerCase();
@@ -43,26 +52,40 @@ public class RockPaperScissors {
                 continue;
             }
 
-            if (!Arrays.asList(options).contains(userChoice)) {
+            if (!options.contains(userChoice)) {
                 System.out.println("Invalid input");
                 continue;
             }
 
-            String computerChoice = options[random.nextInt(options.length)];
+            String computerChoice = options.get(random.nextInt(options.size()));
 
             if (userChoice.equals(computerChoice)) {
                 System.out.println("There is a draw (" + computerChoice + ")");
                 rating += 50;
-            } else if (
-                    (userChoice.equals("rock") && computerChoice.equals("scissors")) ||
-                            (userChoice.equals("scissors") && computerChoice.equals("paper")) ||
-                            (userChoice.equals("paper") && computerChoice.equals("rock"))
-            ) {
-                System.out.println("Well done. The computer chose " + computerChoice + " and failed");
-                rating += 100;
             } else {
-                System.out.println("Sorry, but the computer chose " + computerChoice);
+                if (isUserWinner(userChoice, computerChoice, options)) {
+                    System.out.println("Well done. The computer chose " + computerChoice + " and failed");
+                    rating += 100;
+                } else {
+                    System.out.println("Sorry, but the computer chose " + computerChoice);
+                }
             }
         }
+    }
+
+     private static boolean isUserWinner(String userChoice, String computerChoice, List<String> options) {
+        int total = options.size();
+        int userIndex = options.indexOf(userChoice);
+
+        List<String> shifted = new ArrayList<>();
+        shifted.addAll(options.subList(userIndex + 1, total));
+        shifted.addAll(options.subList(0, userIndex));
+
+        int half = shifted.size() / 2;
+        List<String> losers = shifted.subList(0, half);
+        List<String> winners = shifted.subList(half, shifted.size());
+
+        return winners.contains(computerChoice);
+
     }
 }

@@ -1,16 +1,14 @@
 package WebPageScraper;
 
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 public class WebPageScraper {
@@ -18,60 +16,76 @@ public class WebPageScraper {
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
-        System.out.print("Input the URL: > ");
-        String url = scanner.nextLine().trim();
 
-        List<String> savedArticles = new ArrayList<>();
+        int pages = Integer.parseInt(scanner.nextLine().trim());
+
+        String articleType = scanner.nextLine().trim();
+
+        String baseUrl = "https://www.nature.com/nature/articles?sort=PubDate&year=2023&page=";
 
         try {
-            Document doc = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0")
-                    .get();
+            for (int page = 1; page <= pages; page++) {
 
-            Elements articles = doc.select("article");
+                String url = baseUrl + page;
 
-            for (Element article : articles) {
+                String dirName = "Page_" + page;
+                File dir = new File(dirName);
+                if (!dir.exists()) dir.mkdir();
 
-                Element typeTag = article.selectFirst("span[data-test='article.type']");
-                if (typeTag == null) continue;
-
-                String type = typeTag.text().trim();
-                if (!type.equals("News")) continue;  // беремо лише News
-
-                Element linkTag = article.selectFirst("a[data-track-action='view article']");
-                if (linkTag == null) continue;
-
-                String articleUrl = "https://www.nature.com" + linkTag.attr("href");
-
-                Document articleDoc = Jsoup.connect(articleUrl)
+                Document doc = Jsoup.connect(url)
                         .userAgent("Mozilla/5.0")
                         .get();
 
-                Element body = articleDoc.selectFirst("div[class*=body]");
-                if (body == null) continue;
+                Elements articles = doc.select("article");
 
-                String articleText = body.text().trim();
-                if (articleText.isEmpty()) continue;
+                for (Element article : articles) {
 
-                String title = article.selectFirst("a[data-track-action='view article']").text();
+                    Element typeTag = article.selectFirst("span[data-test=article.type]");
+                    if (typeTag == null) continue;
 
-                String fileName = title.replaceAll("[\\p{Punct}]", "")
-                        .replaceAll(" ", "_")
-                        .replaceAll("_+", "_")
-                        .trim() + ".txt";
+                    String type = typeTag.text().trim();
 
-                // Записуємо файл UTF-8 у бінарному режимі
-                try (FileOutputStream fos = new FileOutputStream(fileName)) {
-                    fos.write(articleText.getBytes(StandardCharsets.UTF_8));
+                    if (!type.equalsIgnoreCase(articleType)) continue;
+
+                    Element linkTag = article.selectFirst("a[data-track-action='view article']");
+                    if (linkTag == null) continue;
+
+                    String articleUrl = "https://www.nature.com" + linkTag.attr("href");
+
+                    Document articleDoc = Jsoup.connect(articleUrl)
+                            .userAgent("Mozilla/5.0")
+                            .get();
+
+                    Element body = articleDoc.selectFirst("div[class*=body]");
+
+                    if (body == null)
+                        body = articleDoc.selectFirst("div[itemprop=articleBody]");
+
+                    if (body == null) continue;
+
+                    String articleText = body.text().trim();
+                    if (articleText.isEmpty()) continue;
+
+                    String title = linkTag.text();
+
+                    String fileName = title
+                            .replaceAll("[^a-zA-Z0-9 ]", "") // видаляємо розділові знаки
+                            .replaceAll(" ", "_")
+                            .replaceAll("_+", "_")
+                            .trim() + ".txt";
+
+                    File outFile = new File(dir, fileName);
+
+                    try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                        fos.write(articleText.getBytes(StandardCharsets.UTF_8));
+                    }
                 }
-
-                savedArticles.add(fileName);
             }
 
-            System.out.println("Saved articles: " + savedArticles);
+            System.out.println("Saved all articles");
 
         } catch (IOException e) {
-            System.out.println("Error: cannot load page.");
+            System.out.println("Error while loading pages.");
         }
     }
 }
